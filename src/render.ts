@@ -153,16 +153,50 @@ function rect(ctx: CanvasRenderingContext2D, x:number,y:number,w:number,h:number
 
 function drawWindow(ctx: CanvasRenderingContext2D, x:number, y:number){
   ctx.save();
-  ctx.fillStyle = '#334155';
-  ctx.fillRect(x, y, 30, 10); // ramme
-  ctx.fillStyle = '#1e293b';
-  ctx.globalAlpha = 0.6;
-  ctx.fillRect(x+2, y+2, 26, 6); // innvendig skygge
   
-  // Gloss effect
-  ctx.globalAlpha = 0.3
-  ctx.fillStyle = '#64748b'
-  ctx.fillRect(x+2, y+2, 26, 2)
+  // Bygning/hus bakgrunn
+  ctx.fillStyle = '#475569';
+  ctx.fillRect(x-5, y-15, 40, 25); // hus-struktur
+  
+  // Tak
+  ctx.fillStyle = '#dc2626';
+  ctx.beginPath();
+  ctx.moveTo(x-8, y-15);
+  ctx.lineTo(x+15, y-25);
+  ctx.lineTo(x+38, y-15);
+  ctx.closePath();
+  ctx.fill();
+  
+  // Tak-skygge
+  ctx.fillStyle = '#991b1b';
+  ctx.beginPath();
+  ctx.moveTo(x+15, y-25);
+  ctx.lineTo(x+38, y-15);
+  ctx.lineTo(x+35, y-15);
+  ctx.lineTo(x+15, y-22);
+  ctx.closePath();
+  ctx.fill();
+  
+  // Vindu-ramme
+  ctx.fillStyle = '#1e293b';
+  ctx.fillRect(x, y, 30, 10);
+  
+  // Vindu-glass
+  ctx.fillStyle = '#0ea5e9';
+  ctx.globalAlpha = 0.7;
+  ctx.fillRect(x+2, y+2, 26, 6);
+  
+  // Vindu-karm (vertikal deling)
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = '#1e293b';
+  ctx.fillRect(x+14, y+1, 2, 8);
+  
+  // Vindu-glans
+  ctx.globalAlpha = 0.4;
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(x+3, y+2, 10, 2);
+  ctx.fillRect(x+17, y+2, 10, 2);
+  
   ctx.restore();
 }
 
@@ -174,11 +208,6 @@ function drawJumper(ctx: CanvasRenderingContext2D, x:number, y:number){
   const left = x - Math.floor(w/2);
   const top = y - Math.floor(h*0.8);
   ctx.save();
-  
-  // Skygge
-  ctx.globalAlpha = 0.3
-  ctx.fillStyle = '#64748b'
-  ctx.fillRect(left + 1, top + 1, w, h)
   
   ctx.globalAlpha = 1
   ctx.fillStyle = '#1e293b';
