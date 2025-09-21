@@ -1,5 +1,6 @@
 import { initGame, update, toggleMode, resetGame, type GameState } from './game'
 import { render } from './render'
+import { initAudio, ensureUserGesture, beep, setMuted, isMuted } from './audio'
 import { setupInput } from './input'
 
 const canvas = document.getElementById('screen') as HTMLCanvasElement
@@ -7,6 +8,8 @@ const ctx = canvas.getContext('2d')!
 const ui = {
   score: document.getElementById('score')!,
   miss: document.getElementById('miss')!,
+  hiscore: document.getElementById('hiscore')!,
+  soundBtn: document.getElementById('soundBtn') as HTMLButtonElement,
   mode: document.getElementById('mode')!,
   start: document.getElementById('startBtn') as HTMLButtonElement,
   pause: document.getElementById('pauseBtn') as HTMLButtonElement,
@@ -15,6 +18,7 @@ const ui = {
 }
 
 let state: GameState = initGame('A')
+initAudio()
 let last = performance.now()
 let acc = 0
 
@@ -29,6 +33,7 @@ function loop(now: number){
   ui.score.textContent = String(state.score)
   ui.miss.textContent = String(state.misses)
   ui.mode.textContent = state.mode
+  ui.hiscore.textContent = String(state.highScore)
 
   requestAnimationFrame(loop)
 }

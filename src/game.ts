@@ -1,3 +1,4 @@
+import { beep } from './audio'
 export type Mode = 'A'|'B'
 export type Cell = { x: number; y: number }
 export type Actor = {
@@ -7,6 +8,8 @@ export type Actor = {
   stepTicks: number   // ticks per rutenett-steg
   stepAcc: number     // akkumulert ticks
   hang: number        // toppheng i ticks
+  v: number            // hastighet (steg per tick)
+  dv: number           // akselerasjon (økning per tick)
 }
 export type GameState = {
   tickMs: number
@@ -22,6 +25,7 @@ export type GameState = {
   rng: number
   // enkel input-buffer: brukes av input.ts til å «legge inn» en bevegelse til neste tick
   pendingDir: -1|0|1
+  highScore: number
 }
 
 const GRID_W = 3
@@ -34,7 +38,9 @@ const SPAWNS: Cell[][] = [
   [{x:2,y:0},{x:2,y:1},{x:2,y:2},{x:2,y:3},{x:2,y:4},{x:2,y:5}],
 ]
 
+const HS_KEY = 'gnw_highscore';
 export function initGame(mode: Mode): GameState{
+  const hs = Number(localStorage.getItem(HS_KEY) || '0');
   return {
     tickMs: 200,                // roligere start
     score: 0,
@@ -48,6 +54,7 @@ export function initGame(mode: Mode): GameState{
     spawnInterval: mode==='A' ? 1400 : 1000, // romsligere
     rng: 0xC0FFEE,
     pendingDir: 0,
+    highScore: hs,
   }
 }
 
@@ -71,7 +78,7 @@ function spawnActor(s: GameState){
   const lane = Math.floor(rand(s) * 3) as 0|1|2
   const path = SPAWNS[lane]
   const baseStep = 2 // 2 ticks per steg i starten
-  const a: Actor = { path, i: 0, alive: true, stepTicks: baseStep, stepAcc: 0, hang: 2 }
+  const a: Actor = { path, i: 0, alive: true, stepTicks: baseStep, stepAcc: 0, hang: 2, v: 0.5, dv: 0.02 }
   s.actors.push(a)
 }
 
@@ -100,11 +107,13 @@ export function update(s: GameState){
     if(!a.alive) continue
 
     if(a.hang > 0){
-      a.hang-- // vent litt i toppen for å «telegrafere»
+      a.hang--
     } else {
-      a.stepAcc += 1
-      if(a.stepAcc >= a.stepTicks){
-        a.stepAcc = 0
+      // per-aktor akselerasjon
+      a.v = Math.min(1.2, a.v + a.dv)
+      a.stepAcc += a.v
+      if(a.stepAcc >= 1){
+        a.stepAcc -= 1
         a.i++
       }
     }
@@ -114,11 +123,17 @@ export function update(s: GameState){
       const catchNow = (pos.x === s.playerPos)
       const catchPrev = (pos.x === s.prevPlayerPos) // grace 1 tick
       if(catchNow || catchPrev){
-        s.score++
+        s.score++;
+        beep(880, 60);
       } else {
-        s.misses++
+        s.misses++;
+        beep(220, 120);
         if(s.misses >= 3){
-          s.running = false // game over
+          s.running = false; // game over
+          if(s.score > s.highScore){
+            s.highScore = s.score;
+            localStorage.setItem(HS_KEY, String(s.highScore));
+          }
         }
       }
       a.alive = false
