@@ -81,7 +81,9 @@ export function initGame(mode: Mode): GameState{
 }
 
 export function resetGame(s: GameState): GameState{
-  return initGame(s.mode)
+  const newGame = initGame(s.mode)
+  newGame.highScore = s.highScore // behold highscore
+  return newGame
 }
 
 export function toggleMode(s: GameState): GameState{

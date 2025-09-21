@@ -27,7 +27,7 @@ export function render(ctx: CanvasRenderingContext2D, s: GameState){
   (ctx as any).imageSmoothingEnabled = false;
   
   // Screen shake
-  if (s.shakeIntensity > 0) {
+  if (s.shakeIntensity > 0 && s.running) {
     ctx.save()
     const shake = s.shakeIntensity
     ctx.translate(
@@ -39,12 +39,8 @@ export function render(ctx: CanvasRenderingContext2D, s: GameState){
   // bakgrunn
   ctx.clearRect(0,0,W,H)
   
-  // Gradient bakgrunn
-  const gradient = ctx.createLinearGradient(0, 0, 0, H)
-  gradient.addColorStop(0, '#f8fafc')
-  gradient.addColorStop(1, '#e2e8f0')
-  ctx.fillStyle = gradient
-  ctx.fillRect(0, 0, W, H)
+  // Skyline bakgrunn
+  drawSkyline(ctx)
   
   // LCD inaktive celler (lysere ruter)
   ctx.save();
@@ -111,6 +107,13 @@ export function render(ctx: CanvasRenderingContext2D, s: GameState){
 
   // «Game Over» overlay
   if(!s.running && (s.misses >= 3)){
+    // Reset shake når game over vises
+    if (s.shakeIntensity > 0) {
+      ctx.restore()
+      s.shakeIntensity = 0
+      ctx.save()
+    }
+    
     ctx.save()
     ctx.globalAlpha = 0.95
     ctx.fillStyle = '#1e293b'
@@ -131,7 +134,7 @@ export function render(ctx: CanvasRenderingContext2D, s: GameState){
     ctx.restore()
   }
   
-  if (s.shakeIntensity > 0) {
+  if (s.shakeIntensity > 0 && s.running) {
     ctx.restore()
   }
 }
@@ -154,48 +157,57 @@ function rect(ctx: CanvasRenderingContext2D, x:number,y:number,w:number,h:number
 function drawWindow(ctx: CanvasRenderingContext2D, x:number, y:number){
   ctx.save();
   
-  // Bygning/hus bakgrunn
-  ctx.fillStyle = '#475569';
-  ctx.fillRect(x-5, y-15, 40, 25); // hus-struktur
+  // Skyskraper-struktur (høyere og mer moderne)
+  ctx.fillStyle = '#2d3748';
+  ctx.fillRect(x-8, y-35, 46, 45); // hovedbygning
   
-  // Tak
-  ctx.fillStyle = '#dc2626';
-  ctx.beginPath();
-  ctx.moveTo(x-8, y-15);
-  ctx.lineTo(x+15, y-25);
-  ctx.lineTo(x+38, y-15);
-  ctx.closePath();
-  ctx.fill();
+  // Bygningsdetaljer
+  ctx.fillStyle = '#4a5568';
+  ctx.fillRect(x-6, y-33, 42, 2); // etasje-linje
+  ctx.fillRect(x-6, y-25, 42, 2); // etasje-linje
+  ctx.fillRect(x-6, y-17, 42, 2); // etasje-linje
   
-  // Tak-skygge
-  ctx.fillStyle = '#991b1b';
-  ctx.beginPath();
-  ctx.moveTo(x+15, y-25);
-  ctx.lineTo(x+38, y-15);
-  ctx.lineTo(x+35, y-15);
-  ctx.lineTo(x+15, y-22);
-  ctx.closePath();
-  ctx.fill();
+  // Antenne/mast på toppen
+  ctx.fillStyle = '#718096';
+  ctx.fillRect(x+13, y-45, 4, 10);
   
-  // Vindu-ramme
+  // Blinkende lys på toppen
+  ctx.fillStyle = '#ff0000';
+  ctx.fillRect(x+14, y-47, 2, 2);
+  
+  // Ekstra vinduer på bygningen
+  ctx.fillStyle = '#ffd700';
+  // Øverste etasje
+  ctx.fillRect(x-2, y-30, 4, 6);
+  ctx.fillRect(x+8, y-30, 4, 6);
+  ctx.fillRect(x+18, y-30, 4, 6);
+  ctx.fillRect(x+28, y-30, 4, 6);
+  
+  // Midterste etasje  
+  ctx.fillRect(x-2, y-22, 4, 6);
+  ctx.fillRect(x+8, y-22, 4, 6);
+  ctx.fillRect(x+18, y-22, 4, 6);
+  ctx.fillRect(x+28, y-22, 4, 6);
+  
+  // Hovedvindu (der folk hopper fra) - større og mer fremtredende
   ctx.fillStyle = '#1e293b';
-  ctx.fillRect(x, y, 30, 10);
+  ctx.fillRect(x-2, y-2, 34, 12);
   
-  // Vindu-glass
+  // Hovedvindu-glass
   ctx.fillStyle = '#0ea5e9';
   ctx.globalAlpha = 0.7;
-  ctx.fillRect(x+2, y+2, 26, 6);
+  ctx.fillRect(x, y, 30, 8);
   
-  // Vindu-karm (vertikal deling)
+  // Vinduskarm
   ctx.globalAlpha = 1;
   ctx.fillStyle = '#1e293b';
-  ctx.fillRect(x+14, y+1, 2, 8);
+  ctx.fillRect(x+14, y, 2, 8);
   
-  // Vindu-glans
+  // Glanseffekt
   ctx.globalAlpha = 0.4;
   ctx.fillStyle = '#ffffff';
-  ctx.fillRect(x+3, y+2, 10, 2);
-  ctx.fillRect(x+17, y+2, 10, 2);
+  ctx.fillRect(x+1, y+1, 12, 2);
+  ctx.fillRect(x+17, y+1, 12, 2);
   
   ctx.restore();
 }
@@ -270,4 +282,59 @@ function drawMissIcons(ctx: CanvasRenderingContext2D, misses:number){
     ctx.stroke()
     ctx.restore()
   }
+}
+
+function drawSkyline(ctx: CanvasRenderingContext2D) {
+  // Himmel gradient
+  const skyGradient = ctx.createLinearGradient(0, 0, 0, H * 0.6)
+  skyGradient.addColorStop(0, '#87ceeb')  // himmelblå
+  skyGradient.addColorStop(0.7, '#b0e0e6') // lysere blå
+  skyGradient.addColorStop(1, '#f0f8ff')   // nesten hvit
+  ctx.fillStyle = skyGradient
+  ctx.fillRect(0, 0, W, H * 0.6)
+  
+  // Bakgrunnsbygninger (fjerne skyskrapere)
+  const buildings = [
+    { x: -10, w: 25, h: 40, color: '#4a5568' },
+    { x: 12, w: 18, h: 55, color: '#2d3748' },
+    { x: 28, w: 22, h: 35, color: '#4a5568' },
+    { x: 48, w: 15, h: 48, color: '#2d3748' },
+    { x: 61, w: 20, h: 42, color: '#4a5568' },
+    { x: 79, w: 16, h: 38, color: '#2d3748' },
+    { x: 93, w: 24, h: 52, color: '#4a5568' },
+    { x: 115, w: 19, h: 45, color: '#2d3748' },
+    { x: 132, w: 21, h: 40, color: '#4a5568' },
+    { x: 151, w: 17, h: 35, color: '#2d3748' }
+  ]
+  
+  // Tegn bakgrunnsbygninger
+  for (const building of buildings) {
+    const baseY = H * 0.6
+    ctx.fillStyle = building.color
+    ctx.fillRect(building.x, baseY - building.h, building.w, building.h)
+    
+    // Vinduer på bakgrunnsbygninger
+    ctx.fillStyle = '#ffd700'
+    for (let floor = 0; floor < Math.floor(building.h / 8); floor++) {
+      for (let window = 0; window < Math.floor(building.w / 6); window++) {
+        if (Math.random() > 0.3) { // ikke alle vinduer er tent
+          const wx = building.x + 2 + window * 6
+          const wy = baseY - building.h + 2 + floor * 8
+          ctx.fillRect(wx, wy, 3, 4)
+        }
+      }
+    }
+  }
+  
+  // Forgrunnsbygninger (der spillerne hopper fra)
+  const foregroundY = H * 0.6
+  ctx.fillStyle = '#1a202c'
+  ctx.fillRect(0, foregroundY, W, H - foregroundY)
+  
+  // Gradient på forgrunnen for dybde
+  const fgGradient = ctx.createLinearGradient(0, foregroundY, 0, H)
+  fgGradient.addColorStop(0, '#2d3748')
+  fgGradient.addColorStop(1, '#1a202c')
+  ctx.fillStyle = fgGradient
+  ctx.fillRect(0, foregroundY, W, H - foregroundY)
 }
