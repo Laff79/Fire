@@ -11,13 +11,13 @@
     <div id="ui">
       <div class="bezel">
         <div class="title">BRANNMESTER — Game & Watch-stil</div>
-        <canvas id="screen" width="160" height="144"></canvas>
+        <div class="canvas-wrap"><canvas id="screen" width="160" height="144"></canvas></div>
         <div class="hud">
           <div><span id="mode">A</span></div>
           <div>Poeng: <span id="score">0</span></div><div>Highscore: <span id="hiscore">0</span></div>
           <div>Feil: <span id="miss">0</span>/3</div>
         </div>
-        <div class="buttons"><button id="soundBtn">Lyd: På</button>
+        <div class="buttons"><button id="soundBtn">Lyd: På</button><label style="margin-left:6px">Skala: <select id="scaleSel"><option>4</option><option selected>5</option><option>6</option></select></label>
           <button id="startBtn">Start</button>
           <button id="modeBtn">Game A/B</button>
           <button id="pauseBtn">Pause</button>

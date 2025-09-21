@@ -46,3 +46,9 @@ ui.modeBtn.addEventListener('click', ()=>{ state = toggleMode(state) })
 setupInput(canvas, state, () => { state.running = true })
 
 requestAnimationFrame(loop)
+
+
+const scaleSel = document.getElementById('scaleSel') as HTMLSelectElement | null;
+scaleSel?.addEventListener('change', ()=>{
+  document.documentElement.style.setProperty('--scale', scaleSel.value);
+});

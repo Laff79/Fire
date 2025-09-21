@@ -22,17 +22,19 @@ function drawPlayer(ctx: CanvasRenderingContext2D, x:number, y:number){
 
 
 export function render(ctx: CanvasRenderingContext2D, s: GameState){
+  (ctx as any).imageSmoothingEnabled = false;
   // bakgrunn
   ctx.clearRect(0,0,W,H)
-  // rutenett-guides (svak)
-  ctx.save()
-  ctx.globalAlpha = 0.08
+  // LCD inaktive celler (lysere ruter)
+  ctx.save();
+  ctx.globalAlpha = 1.0;
   for(let x=0;x<3;x++){
-    for(let y=0;y<3;y++){
-      rect(ctx, 16 + x*42, 16 + y*32, 30, 22)
+    for(let y=1;y<3;y++){
+      ctx.fillStyle = '#ece8d6';
+      ctx.fillRect(16 + x*42, 32 + (y-1)*32, 30, 22);
     }
   }
-  ctx.restore()
+  ctx.restore();
 
   // vinduer (topp‑ramme)
   for(let x=0;x<3;x++){
@@ -46,8 +48,20 @@ export function render(ctx: CanvasRenderingContext2D, s: GameState){
     drawJumper(ctx, cellToXY(pos).x, cellToXY(pos).y)
   }
 
+  // spiller-skygge
+  ctx.save();
+  ctx.globalAlpha = 0.15;
+  ctx.fillStyle = '#000';
+  ctx.beginPath();
+  ctx.ellipse(16 + s.playerPos*42 + 15, 140, 18, 5, 0, 0, Math.PI*2);
+  ctx.fill();
+  ctx.restore();
+
   // duk/spiller nederst
   drawPlayer(ctx, 16 + s.playerPos*42 + 15, 136)
+
+  // Miss-ikoner
+  drawMissIcons(ctx, s.misses);
 
   // «Game Over» overlay
   if(!s.running && (s.misses >= 3)){
@@ -79,11 +93,15 @@ function rect(ctx: CanvasRenderingContext2D, x:number,y:number,w:number,h:number
 }
 
 function drawWindow(ctx: CanvasRenderingContext2D, x:number, y:number){
-  ctx.save()
-  ctx.fillStyle = '#191919'
-  ctx.fillRect(x, y, 30, 10)
-  ctx.restore()
+  ctx.save();
+  ctx.fillStyle = '#191919';
+  ctx.fillRect(x, y, 30, 10); // ramme
+  ctx.fillStyle = '#000000';
+  ctx.globalAlpha = 0.4;
+  ctx.fillRect(x+2, y+2, 26, 6); // innvendig skygge
+  ctx.restore();
 }
+
 
 function drawJumper(ctx: CanvasRenderingContext2D, x:number, y:number){
   // 1‑bit stil: enkel «pinnemann»
@@ -110,4 +128,18 @@ function drawTrampoline(ctx: CanvasRenderingContext2D, x:number, y:number){
   ctx.fillRect(x-6, y-6, 6, 2)
   ctx.fillRect(x+30, y-6, 6, 2)
   ctx.restore()
+}
+
+
+function drawMissIcons(ctx: CanvasRenderingContext2D, misses:number){
+  for(let i=0;i<3;i++){
+    const x = 120 + i*12, y = 6;
+    ctx.globalAlpha = i < misses ? 1 : 0.2;
+    ctx.fillStyle = '#191919';
+    for(let k=0;k<6;k++){
+      ctx.fillRect(x+k, y+k, 1, 1);
+      ctx.fillRect(x+6-k, y+k, 1, 1);
+    }
+  }
+  ctx.globalAlpha = 1;
 }
