@@ -27,6 +27,16 @@ export function render(ctx: CanvasRenderingContext2D, s: GameState){
   (ctx as any).imageSmoothingEnabled = false;
   // bakgrunn
   ctx.clearRect(0,0,W,H)
+  // LCD inaktive celler (lysere ruter)
+  ctx.save();
+  ctx.globalAlpha = 1.0;
+  for(let x=0;x<3;x++){
+    for(let y=1;y<3;y++){
+      ctx.fillStyle = '#ece8d6';
+      ctx.fillRect(16 + x*42, 32 + (y-1)*32, 30, 22);
+    }
+  }
+  ctx.restore();
 
   // vinduer (topp‑ramme)
   for(let x=0;x<3;x++){
