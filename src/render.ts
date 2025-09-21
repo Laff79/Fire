@@ -242,8 +242,3 @@ function drawMissIcons(ctx: CanvasRenderingContext2D, misses:number){
     ctx.restore()
   }
 }
-
-    }
-  }
-  ctx.globalAlpha = 1;
-}
