@@ -9,7 +9,6 @@ const ui = {
   score: document.getElementById('score')!,
   miss: document.getElementById('miss')!,
   hiscore: document.getElementById('hiscore')!,
-  perfect: document.getElementById('perfect')!,
   soundBtn: document.getElementById('soundBtn') as HTMLButtonElement,
   mode: document.getElementById('mode')!,
   start: document.getElementById('startBtn') as HTMLButtonElement,
@@ -33,7 +32,6 @@ function loop(now: number){
   render(ctx, state)
   ui.score.textContent = String(state.score)
   ui.miss.textContent = String(state.misses)
-  ui.perfect.textContent = String(state.perfectCatches)
   ui.mode.textContent = state.mode
   ui.hiscore.textContent = String(state.highScore)
 

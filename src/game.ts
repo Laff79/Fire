@@ -1,15 +1,6 @@
 import { beep } from './audio'
 export type Mode = 'A'|'B'
 export type Cell = { x: number; y: number }
-export type Particle = {
-  x: number
-  y: number
-  vx: number
-  vy: number
-  life: number
-  maxLife: number
-  color: string
-}
 export type Actor = {
   path: Cell[]
   i: number
@@ -19,7 +10,6 @@ export type Actor = {
   hang: number        // toppheng i ticks
   v: number            // hastighet (steg per tick)
   dv: number           // akselerasjon (økning per tick)
-  bouncePhase: number  // for animasjon
 }
 export type GameState = {
   tickMs: number
@@ -30,18 +20,12 @@ export type GameState = {
   playerPos: 0|1|2 // 3 bakkeposisjoner
   prevPlayerPos: 0|1|2 // for grace check
   actors: Actor[]
-  particles: Particle[]
   spawnTimer: number
   spawnInterval: number
   rng: number
   // enkel input-buffer: brukes av input.ts til å «legge inn» en bevegelse til neste tick
   pendingDir: -1|0|1
   highScore: number
-  combo: number
-  comboTimer: number
-  perfectCatches: number
-  gameTime: number
-  shakeIntensity: number
 }
 
 const GRID_W = 3
@@ -66,24 +50,16 @@ export function initGame(mode: Mode): GameState{
     playerPos: 1,
     prevPlayerPos: 1,
     actors: [],
-    particles: [],
     spawnTimer: 0,
     spawnInterval: mode==='A' ? 1400 : 1000, // romsligere
     rng: 0xC0FFEE,
     pendingDir: 0,
     highScore: hs,
-    combo: 0,
-    comboTimer: 0,
-    perfectCatches: 0,
-    gameTime: 0,
-    shakeIntensity: 0,
   }
 }
 
 export function resetGame(s: GameState): GameState{
-  const newGame = initGame(s.mode)
-  newGame.highScore = s.highScore // behold highscore
-  return newGame
+  return initGame(s.mode)
 }
 
 export function toggleMode(s: GameState): GameState{
@@ -102,39 +78,12 @@ function spawnActor(s: GameState){
   const lane = Math.floor(rand(s) * 3) as 0|1|2
   const path = SPAWNS[lane]
   const baseStep = 2 // 2 ticks per steg i starten
-  const a: Actor = { path, i: 0, alive: true, stepTicks: baseStep, stepAcc: 0, hang: 2, v: 0.5, dv: 0.02, bouncePhase: 0 }
+  const a: Actor = { path, i: 0, alive: true, stepTicks: baseStep, stepAcc: 0, hang: 2, v: 0.5, dv: 0.02 }
   s.actors.push(a)
-}
-
-function addParticles(s: GameState, x: number, y: number, color: string, count: number = 5) {
-  for (let i = 0; i < count; i++) {
-    s.particles.push({
-      x: x + (rand(s) - 0.5) * 20,
-      y: y + (rand(s) - 0.5) * 10,
-      vx: (rand(s) - 0.5) * 4,
-      vy: -rand(s) * 3 - 1,
-      life: 30 + rand(s) * 20,
-      maxLife: 50,
-      color
-    })
-  }
 }
 
 export function update(s: GameState){
   if(!s.running) return
-
-  s.gameTime += s.tickMs
-  
-  // Reduser shake
-  s.shakeIntensity = Math.max(0, s.shakeIntensity - 0.5)
-  
-  // Combo timer
-  if (s.comboTimer > 0) {
-    s.comboTimer -= s.tickMs
-    if (s.comboTimer <= 0) {
-      s.combo = 0
-    }
-  }
 
   // lagre forrige pos for grace check
   const lastPos = s.playerPos
@@ -157,9 +106,6 @@ export function update(s: GameState){
   for(const a of s.actors){
     if(!a.alive) continue
 
-    // Animasjon
-    a.bouncePhase += 0.3
-
     if(a.hang > 0){
       a.hang--
     } else {
@@ -177,35 +123,11 @@ export function update(s: GameState){
       const catchNow = (pos.x === s.playerPos)
       const catchPrev = (pos.x === s.prevPlayerPos) // grace 1 tick
       if(catchNow || catchPrev){
-        // Perfekt fangst gir bonus
-        const perfect = catchNow && (pos.x === s.playerPos)
-        let points = 1
-        
-        if (perfect) {
-          s.perfectCatches++
-          s.combo++
-          s.comboTimer = 2000 // 2 sekunder
-          
-          // Combo bonus
-          if (s.combo >= 5) points = 3
-          else if (s.combo >= 3) points = 2
-          
-          beep(880 + s.combo * 50, 60)
-          addParticles(s, 31 + pos.x * 42, 120, '#4ade80', 8)
-        } else {
-          beep(660, 80)
-          addParticles(s, 31 + pos.x * 42, 120, '#fbbf24', 4)
-        }
-        
-        s.score += points
+        s.score++;
+        beep(880, 60);
       } else {
         s.misses++;
-        s.combo = 0
-        s.comboTimer = 0
-        s.shakeIntensity = 8
-        beep(220, 120)
-        addParticles(s, 31 + pos.x * 42, 120, '#ef4444', 6)
-        
+        beep(220, 120);
         if(s.misses >= 3){
           s.running = false; // game over
           if(s.score > s.highScore){
@@ -217,15 +139,6 @@ export function update(s: GameState){
       a.alive = false
     }
   }
-
-  // Oppdater partikler
-  for (const p of s.particles) {
-    p.x += p.vx
-    p.y += p.vy
-    p.vy += 0.2 // gravity
-    p.life--
-  }
-  s.particles = s.particles.filter(p => p.life > 0)
 
   // fjern døde med jevne mellomrom
   if(s.actors.length > 24){

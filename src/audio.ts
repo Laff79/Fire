@@ -28,39 +28,13 @@ export function ensureUserGesture(){
 
 export function beep(freq: number, ms: number, vol=0.2){
   if(!ctx || muted) return;
-  try {
-    const o = ctx.createOscillator();
-    const g = ctx.createGain();
-    o.type = 'square';
-    o.frequency.setValueAtTime(freq, ctx.currentTime);
-    g.gain.setValueAtTime(vol, ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + ms/1000);
-    o.connect(g); g.connect(ctx.destination);
-    o.start();
-    o.stop(ctx.currentTime + ms/1000);
-  } catch (e) {
-    // Ignore audio errors
-  }
-}
-
-export function playMelody(notes: {freq: number, duration: number}[], vol = 0.15) {
-  if (!ctx || muted) return;
-  
-  let time = ctx.currentTime;
-  for (const note of notes) {
-    try {
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.type = 'triangle';
-      o.frequency.setValueAtTime(note.freq, time);
-      g.gain.setValueAtTime(vol, time);
-      g.gain.exponentialRampToValueAtTime(0.0001, time + note.duration/1000);
-      o.connect(g); g.connect(ctx.destination);
-      o.start(time);
-      o.stop(time + note.duration/1000);
-      time += note.duration/1000;
-    } catch (e) {
-      // Ignore audio errors
-    }
-  }
+  const o = ctx.createOscillator();
+  const g = ctx.createGain();
+  o.type = 'square';
+  o.frequency.setValueAtTime(freq, ctx.currentTime);
+  g.gain.setValueAtTime(vol, ctx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + ms/1000);
+  o.connect(g); g.connect(ctx.destination);
+  o.start();
+  o.stop(ctx.currentTime + ms/1000);
 }
