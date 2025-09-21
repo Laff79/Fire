@@ -72,7 +72,6 @@ function cellToXY(c: Cell){
   return { x, y }
 }
 
-}
 
 function rect(ctx: CanvasRenderingContext2D, x:number,y:number,w:number,h:number){
   ctx.fillStyle = '#191919'
