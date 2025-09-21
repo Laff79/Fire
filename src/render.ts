@@ -16,14 +16,9 @@ function drawPlayer(ctx: CanvasRenderingContext2D, x:number, y:number){
   if(playerReady){
     ctx.drawImage(playerImg, x - Math.floor(w/2), y - h, w, h);
   } else {
-    ctx.fillStyle = '#191919';
-    ctx.fillRect(x - Math.floor(w/2), y - h, w, h);
-  }
-}
- else {
     // fallback silhouette
     ctx.fillStyle = '#191919';
-    ctx.fillRect(x-15, y-8, 30, 8);
+    ctx.fillRect(x - Math.floor(w/2), y - h, w, h);
   }
 }
 
