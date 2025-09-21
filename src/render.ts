@@ -1,6 +1,7 @@
 import type { GameState, Cell } from './game'
 
 const W = 160, H = 144
+const CELL_W = 30, CELL_H = 20
 
 // Player sprite (from /public/player.png)
 const playerImg = new Image();
@@ -9,11 +10,17 @@ let playerReady = false;
 playerImg.onload = () => { playerReady = true; };
 
 function drawPlayer(ctx: CanvasRenderingContext2D, x:number, y:number){
-  // Draw centered over x; y represents baseline (feet)
-  const w = 32, h = 48;
+  // scale PNG to cell-relative size
+  const w = Math.round(0.75 * CELL_W);  // ~22 px
+  const h = Math.round(1.50 * CELL_H);  // ~30 px
   if(playerReady){
     ctx.drawImage(playerImg, x - Math.floor(w/2), y - h, w, h);
   } else {
+    ctx.fillStyle = '#191919';
+    ctx.fillRect(x - Math.floor(w/2), y - h, w, h);
+  }
+}
+ else {
     // fallback silhouette
     ctx.fillStyle = '#191919';
     ctx.fillRect(x-15, y-8, 30, 8);
@@ -53,7 +60,7 @@ export function render(ctx: CanvasRenderingContext2D, s: GameState){
   ctx.globalAlpha = 0.15;
   ctx.fillStyle = '#000';
   ctx.beginPath();
-  ctx.ellipse(16 + s.playerPos*42 + 15, 140, 18, 5, 0, 0, Math.PI*2);
+  ctx.ellipse(16 + s.playerPos*42 + 15, 140, Math.round(0.6*CELL_W), Math.round(0.25*CELL_H), 0, 0, Math.PI*2);
   ctx.fill();
   ctx.restore();
 
@@ -104,21 +111,28 @@ function drawWindow(ctx: CanvasRenderingContext2D, x:number, y:number){
 
 
 function drawJumper(ctx: CanvasRenderingContext2D, x:number, y:number){
-  // 1‑bit stil: enkel «pinnemann»
-  ctx.save()
-  ctx.fillStyle = '#191919'
+  // 1-bit silhuett basert på celle-størrelse (ca 15x18 px)
+  const w = Math.round(0.50 * CELL_W); // ~15
+  const h = Math.round(0.90 * CELL_H); // ~18
+  const left = x - Math.floor(w/2);
+  const top = y - Math.floor(h*0.8);
+  ctx.save();
+  ctx.fillStyle = '#191919';
   // hode
-  ctx.fillRect(x-2, y-10, 4, 4)
+  const head = Math.round(h*0.33);
+  ctx.fillRect(left + Math.round(w*0.35), top, Math.round(w*0.3), head);
   // kropp
-  ctx.fillRect(x-1, y-6, 2, 8)
+  const bodyH = Math.round(h*0.45);
+  ctx.fillRect(left + Math.round(w*0.45)-1, top + head, 2, bodyH);
   // armer
-  ctx.fillRect(x-5, y-6, 4, 2)
-  ctx.fillRect(x+1, y-6, 4, 2)
+  ctx.fillRect(left + 1, top + head + 2, Math.round(w*0.35), 2);
+  ctx.fillRect(left + Math.round(w*0.65), top + head + 2, Math.round(w*0.35)-1, 2);
   // bein
-  ctx.fillRect(x-3, y+0, 2, 4)
-  ctx.fillRect(x+1, y+0, 2, 4)
-  ctx.restore()
+  ctx.fillRect(left + Math.round(w*0.25), top + head + bodyH, 2, Math.round(h*0.2));
+  ctx.fillRect(left + Math.round(w*0.75)-2, top + head + bodyH, 2, Math.round(h*0.2));
+  ctx.restore();
 }
+
 
 function drawTrampoline(ctx: CanvasRenderingContext2D, x:number, y:number){
   ctx.save()
