@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="no">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Brannmester (G&W)</title>
+    <link rel="icon" href="/icon.svg" />
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <div id="ui">
+      <div class="bezel">
+        <div class="title">BRANNMESTER — Game & Watch-stil</div>
+        <canvas id="screen" width="160" height="144"></canvas>
+        <div class="hud">
+          <div><span id="mode">A</span></div>
+          <div>Poeng: <span id="score">0</span></div>
+          <div>Feil: <span id="miss">0</span>/3</div>
+        </div>
+        <div class="buttons">
+          <button id="startBtn">Start</button>
+          <button id="modeBtn">Game A/B</button>
+          <button id="pauseBtn">Pause</button>
+          <button id="resetBtn">Reset</button>
+        </div>
+        <div class="help">Taster: ← → • Enter=Start • P=Pause • Trykk venstre/høyre side for touch</div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
