@@ -1,4 +1,4 @@
-import type { GameState, Cell } from './game'
+import type { GameState, Cell, Particle } from './game'
 
 const W = 160, H = 144
 const CELL_W = 30, CELL_H = 20
@@ -25,15 +25,39 @@ function drawPlayer(ctx: CanvasRenderingContext2D, x:number, y:number){
 
 export function render(ctx: CanvasRenderingContext2D, s: GameState){
   (ctx as any).imageSmoothingEnabled = false;
+  
+  // Screen shake
+  if (s.shakeIntensity > 0) {
+    ctx.save()
+    const shake = s.shakeIntensity
+    ctx.translate(
+      (Math.random() - 0.5) * shake,
+      (Math.random() - 0.5) * shake
+    )
+  }
+  
   // bakgrunn
   ctx.clearRect(0,0,W,H)
+  
+  // Gradient bakgrunn
+  const gradient = ctx.createLinearGradient(0, 0, 0, H)
+  gradient.addColorStop(0, '#f8fafc')
+  gradient.addColorStop(1, '#e2e8f0')
+  ctx.fillStyle = gradient
+  ctx.fillRect(0, 0, W, H)
+  
   // LCD inaktive celler (lysere ruter)
   ctx.save();
   ctx.globalAlpha = 1.0;
   for(let x=0;x<3;x++){
     for(let y=1;y<3;y++){
-      ctx.fillStyle = '#ece8d6';
-      ctx.fillRect(16 + x*42, 32 + (y-1)*32, 30, 22);
+      ctx.fillStyle = '#f1f5f9';
+      ctx.strokeStyle = '#cbd5e1'
+      ctx.lineWidth = 1
+      const cellX = 16 + x*42
+      const cellY = 32 + (y-1)*32
+      ctx.fillRect(cellX, cellY, 30, 22);
+      ctx.strokeRect(cellX, cellY, 30, 22);
     }
   }
   ctx.restore();
@@ -47,7 +71,15 @@ export function render(ctx: CanvasRenderingContext2D, s: GameState){
   for(const a of s.actors){
     if(!a.alive) continue
     const pos = a.path[Math.min(a.i, a.path.length-1)]
-    drawJumper(ctx, cellToXY(pos).x, cellToXY(pos).y)
+    const xy = cellToXY(pos)
+    // Bounce animasjon
+    const bounce = Math.sin(a.bouncePhase) * 2
+    drawJumper(ctx, xy.x, xy.y + bounce)
+  }
+
+  // Tegn partikler
+  for (const p of s.particles) {
+    drawParticle(ctx, p)
   }
 
   // spiller-skygge
@@ -62,19 +94,44 @@ export function render(ctx: CanvasRenderingContext2D, s: GameState){
   // duk/spiller nederst
   drawPlayer(ctx, 16 + s.playerPos*42 + 15, 136)
 
+  // Combo display
+  if (s.combo >= 3) {
+    ctx.save()
+    ctx.fillStyle = '#059669'
+    ctx.font = 'bold 10px ui-monospace, monospace'
+    ctx.textAlign = 'center'
+    const alpha = Math.min(1, s.comboTimer / 500)
+    ctx.globalAlpha = alpha
+    ctx.fillText(`COMBO x${s.combo}!`, 80, 25)
+    ctx.restore()
+  }
+
   // Miss-ikoner
   drawMissIcons(ctx, s.misses);
 
   // «Game Over» overlay
   if(!s.running && (s.misses >= 3)){
     ctx.save()
-    ctx.globalAlpha = 0.9
-    ctx.fillStyle = '#000'
-    ctx.fillRect(0, 60, 160, 24)
+    ctx.globalAlpha = 0.95
+    ctx.fillStyle = '#1e293b'
+    ctx.fillRect(0, 50, 160, 44)
+    
+    // Border
+    ctx.strokeStyle = '#475569'
+    ctx.lineWidth = 2
+    ctx.strokeRect(0, 50, 160, 44)
+    
     ctx.fillStyle = '#fff'
     ctx.font = 'bold 12px ui-monospace, monospace'
     ctx.textAlign = 'center'
-    ctx.fillText('GAME OVER — Reset', 80, 76)
+    ctx.fillText('GAME OVER', 80, 68)
+    ctx.font = '10px ui-monospace, monospace'
+    ctx.fillText(`Poeng: ${s.score} • Perfekte: ${s.perfectCatches}`, 80, 82)
+    ctx.fillText('Trykk Reset for ny runde', 80, 92)
+    ctx.restore()
+  }
+  
+  if (s.shakeIntensity > 0) {
     ctx.restore()
   }
 }
@@ -96,38 +153,64 @@ function rect(ctx: CanvasRenderingContext2D, x:number,y:number,w:number,h:number
 
 function drawWindow(ctx: CanvasRenderingContext2D, x:number, y:number){
   ctx.save();
-  ctx.fillStyle = '#191919';
+  ctx.fillStyle = '#334155';
   ctx.fillRect(x, y, 30, 10); // ramme
-  ctx.fillStyle = '#000000';
-  ctx.globalAlpha = 0.4;
+  ctx.fillStyle = '#1e293b';
+  ctx.globalAlpha = 0.6;
   ctx.fillRect(x+2, y+2, 26, 6); // innvendig skygge
+  
+  // Gloss effect
+  ctx.globalAlpha = 0.3
+  ctx.fillStyle = '#64748b'
+  ctx.fillRect(x+2, y+2, 26, 2)
   ctx.restore();
 }
 
 
 function drawJumper(ctx: CanvasRenderingContext2D, x:number, y:number){
-  // 1-bit silhuett basert på celle-størrelse (ca 15x18 px)
+  // Forbedret figur med mer detaljer
   const w = Math.round(0.50 * CELL_W); // ~15
   const h = Math.round(0.90 * CELL_H); // ~18
   const left = x - Math.floor(w/2);
   const top = y - Math.floor(h*0.8);
   ctx.save();
-  ctx.fillStyle = '#191919';
+  
+  // Skygge
+  ctx.globalAlpha = 0.3
+  ctx.fillStyle = '#64748b'
+  ctx.fillRect(left + 1, top + 1, w, h)
+  
+  ctx.globalAlpha = 1
+  ctx.fillStyle = '#1e293b';
+  
   // hode
   const head = Math.round(h*0.33);
-  ctx.fillRect(left + Math.round(w*0.35), top, Math.round(w*0.3), head);
+  ctx.fillRect(left + Math.round(w*0.3), top, Math.round(w*0.4), head);
+  
   // kropp
   const bodyH = Math.round(h*0.45);
-  ctx.fillRect(left + Math.round(w*0.45)-1, top + head, 2, bodyH);
+  ctx.fillRect(left + Math.round(w*0.4), top + head, Math.round(w*0.2), bodyH);
+  
   // armer
-  ctx.fillRect(left + 1, top + head + 2, Math.round(w*0.35), 2);
-  ctx.fillRect(left + Math.round(w*0.65), top + head + 2, Math.round(w*0.35)-1, 2);
+  ctx.fillRect(left + 1, top + head + 3, Math.round(w*0.35), 2);
+  ctx.fillRect(left + Math.round(w*0.65), top + head + 3, Math.round(w*0.35)-1, 2);
+  
   // bein
-  ctx.fillRect(left + Math.round(w*0.25), top + head + bodyH, 2, Math.round(h*0.2));
-  ctx.fillRect(left + Math.round(w*0.75)-2, top + head + bodyH, 2, Math.round(h*0.2));
+  ctx.fillRect(left + Math.round(w*0.3), top + head + bodyH, 2, Math.round(h*0.22));
+  ctx.fillRect(left + Math.round(w*0.7)-2, top + head + bodyH, 2, Math.round(h*0.22));
+  
   ctx.restore();
 }
 
+function drawParticle(ctx: CanvasRenderingContext2D, p: Particle) {
+  ctx.save()
+  const alpha = p.life / p.maxLife
+  ctx.globalAlpha = alpha
+  ctx.fillStyle = p.color
+  const size = 2 + alpha * 2
+  ctx.fillRect(p.x - size/2, p.y - size/2, size, size)
+  ctx.restore()
+}
 
 function drawTrampoline(ctx: CanvasRenderingContext2D, x:number, y:number){
   ctx.save()
@@ -143,11 +226,23 @@ function drawTrampoline(ctx: CanvasRenderingContext2D, x:number, y:number){
 function drawMissIcons(ctx: CanvasRenderingContext2D, misses:number){
   for(let i=0;i<3;i++){
     const x = 120 + i*12, y = 6;
-    ctx.globalAlpha = i < misses ? 1 : 0.2;
-    ctx.fillStyle = '#191919';
-    for(let k=0;k<6;k++){
-      ctx.fillRect(x+k, y+k, 1, 1);
-      ctx.fillRect(x+6-k, y+k, 1, 1);
+    ctx.save()
+    ctx.globalAlpha = i < misses ? 1 : 0.3;
+    ctx.fillStyle = i < misses ? '#dc2626' : '#94a3b8';
+    
+    // X-form
+    ctx.lineWidth = 2
+    ctx.strokeStyle = ctx.fillStyle
+    ctx.beginPath()
+    ctx.moveTo(x, y)
+    ctx.lineTo(x + 8, y + 8)
+    ctx.moveTo(x + 8, y)
+    ctx.lineTo(x, y + 8)
+    ctx.stroke()
+    ctx.restore()
+  }
+}
+
     }
   }
   ctx.globalAlpha = 1;
