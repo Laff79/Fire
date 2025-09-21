@@ -64,10 +64,14 @@ export function render(ctx: CanvasRenderingContext2D, s: GameState){
 }
 
 function cellToXY(c: Cell){
-  // grid-celler (3 kolonner × 4 rader). Vi plasserer dem i rektangler.
+  // GRID_H kan variere; vi map'er 0..(GRID_H-1) til skjermhøyde.
+  // Topp-start ~18px, dy ~20px slik at bunn (y=5) havner rundt 118px.
+  const dy = 20
   const x = 16 + c.x*42 + 15
-  const y = 18 + c.y*30
+  const y = 18 + c.y*dy
   return { x, y }
+}
+
 }
 
 function rect(ctx: CanvasRenderingContext2D, x:number,y:number,w:number,h:number){
